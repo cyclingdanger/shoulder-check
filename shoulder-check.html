@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shoulder Check — Cyclist Crash Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F6F7FA;
+    --surface: #FFFFFF;
+    --surface-2: #EEF0F5;
+    --border: #E1E3EA;
+    --text: #14171F;
+    --text-soft: #565B6D;
+    --text-faint: #8A8FA0;
+    --primary: #2743C7;
+    --primary-dark: #1E35A6;
+    --primary-soft: rgba(39,67,199,0.08);
+    --primary-ink: #FFFFFF;
+    --teal: #0E7C74;
+    --teal-soft: rgba(14,124,116,0.08);
+    --amber: #B4690E;
+    --amber-soft: rgba(180,105,14,0.10);
+    --danger: #C4342F;
+    --danger-soft: rgba(196,52,47,0.08);
+    --focus: #2743C7;
+    --shadow-sm: 0 1px 2px rgba(20,23,31,0.05), 0 1px 3px rgba(20,23,31,0.04);
+    --shadow-md: 0 6px 16px rgba(20,23,31,0.08), 0 2px 4px rgba(20,23,31,0.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  a { color: var(--primary); }
+  a:hover { color: var(--primary-dark); }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .wrap{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ---------- Masthead ---------- */
+  header.masthead{
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 22px;
+    margin-bottom: 40px;
+  }
+  .masthead-top{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  h1{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 4.4vw, 2.6rem);
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    color: var(--text);
+  }
+  .masthead-meta{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .masthead-sub{
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+    color: var(--text-soft);
+    margin-top: 10px;
+    max-width: 62ch;
+  }
+
+  .title-row{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .title-icon{
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+  .hero-illustration{
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    margin-bottom: 40px;
+    border-radius: 18px;
+  }
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display: grid;
+    grid-template-columns: 288px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 780px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Sidebar / control drawer ---------- */
+  .drawer{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    position: sticky;
+    top: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  @media (max-width: 780px){ .drawer{ position: static; } }
+
+  .drawer h2{
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    color: var(--text-faint);
+    margin: 0 0 18px;
+  }
+  .field{ margin-bottom: 20px; }
+  .field label{
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  select#stateSelect{
+    width: 100%;
+    padding: 11px 34px 11px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text);
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-soft) 50%), linear-gradient(135deg, var(--text-soft) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  select#stateSelect:hover{ border-color: var(--text-faint); }
+  select#stateSelect:focus{ border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); outline: none; }
+
+  .period-row{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .period-btn{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    padding: 9px 4px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .period-btn:hover{ color: var(--text); background: rgba(20,23,31,0.04); }
+  .period-btn[aria-pressed="true"]{
+    background: var(--primary);
+    color: var(--primary-ink);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .scan-btn{
+    width: 100%;
+    padding: 13px 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    background: var(--primary);
+    color: var(--primary-ink);
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  }
+  .scan-btn:hover:not(:disabled){ background: var(--primary-dark); box-shadow: var(--shadow-md); }
+  .scan-btn:active:not(:disabled){ transform: translateY(1px); }
+  .scan-btn:disabled{ background: var(--surface-2); color: var(--text-faint); cursor: default; box-shadow: none; }
+
+  .drawer-foot{
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.79rem;
+    color: var(--text-soft);
+  }
+  .clear-link{
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--text-faint);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-block;
+    transition: color 0.15s ease;
+  }
+  .clear-link:hover{ color: var(--danger); }
+
+  /* ---------- Main log ---------- */
+  .log-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .log-header h2{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--text);
+  }
+  .tally{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text-faint);
+  }
+
+  .status-line{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.84rem;
+    color: var(--text-soft);
+    margin-bottom: 20px;
+    min-height: 1.2em;
+  }
+  .status-line.error{ color: var(--danger); }
+
+  .empty-state{
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 40px 28px;
+    text-align: left;
+    color: var(--text-soft);
+    background: var(--surface);
+  }
+  .empty-state p{ margin: 0 0 10px; }
+  .empty-state .big{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+
+  .entries{ display: flex; flex-direction: column; gap: 12px; }
+  .entry{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .entry:hover{ box-shadow: var(--shadow-md); border-color: var(--text-faint); }
+  .entry-top{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .entry-date{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--teal);
+    background: var(--teal-soft);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .entry-state{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--amber);
+    background: var(--amber-soft);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .entry-title{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1.35;
+    margin: 0 0 6px;
+    color: var(--text);
+  }
+  .entry-title a{ color: var(--text); text-decoration: none; }
+  .entry-title a:hover{ color: var(--primary); text-decoration: underline; }
+  .entry-source{
+    font-size: 0.84rem;
+    color: var(--text-faint);
+  }
+  .entry-summary{
+    font-size: 0.95rem;
+    color: var(--text-soft);
+    max-width: 72ch;
+    margin-top: 8px;
+  }
+
+  footer.note{
+    margin-top: 44px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    max-width: 72ch;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <h1 class="title-row">
+        <svg class="title-icon" width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="7" cy="23" r="6"/>
+          <circle cx="25" cy="23" r="6"/>
+          <path d="M7 23 L15 9 L21 9 L25 23 M15 9 L18 16 L7 23 M18 16 L21 9 M18 16 L23 23"/>
+          <circle cx="18" cy="16" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+        Shoulder Check
+      </h1>
+      <div class="masthead-meta" id="lastScanMeta">no scan run yet</div>
+    </div>
+    <p class="masthead-sub">A running record of drivers striking cyclists across the U.S. — fatalities, hit-and-runs, and serious injuries, pulled from real news coverage.</p>
+  </header>
+
+  <svg class="hero-illustration" viewBox="0 0 1120 200" role="img" aria-label="Illustration of a cyclist riding along a road" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="1120" height="200" rx="18" fill="var(--surface-2)"/>
+    <circle cx="970" cy="55" r="36" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="2.5"/>
+    <rect x="0" y="150" width="1120" height="34" fill="#333A46"/>
+    <line x1="0" y1="167" x2="1120" y2="167" stroke="#F6F7FA" stroke-width="4" stroke-dasharray="26 20"/>
+    <g transform="translate(120,70)" stroke="var(--primary)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="20" cy="70" r="26"/>
+      <circle cx="120" cy="70" r="26"/>
+      <path d="M20 70 L58 20 L88 20 L120 70 M58 20 L72 46 L20 70 M72 46 L88 20 M72 46 L100 70"/>
+      <circle cx="72" cy="46" r="4" fill="var(--primary)" stroke="none"/>
+    </g>
+    <g transform="translate(600,80)" stroke="var(--primary)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.32">
+      <circle cx="16" cy="56" r="20"/>
+      <circle cx="96" cy="56" r="20"/>
+      <path d="M16 56 L46 16 L70 16 L96 56 M46 16 L58 37 L16 56 M58 37 L70 16 M58 37 L80 56"/>
+    </g>
+  </svg>
+
+  <div class="layout">
+
+    <aside class="drawer">
+      <h2>run a scan</h2>
+
+      <div class="field">
+        <label for="stateSelect">State</label>
+        <select id="stateSelect">
+          <option value="ALL">All states</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label id="periodLabel">Time period</label>
+        <div class="period-row" role="group" aria-labelledby="periodLabel">
+          <button type="button" class="period-btn" data-days="1" aria-pressed="false">1 day</button>
+          <button type="button" class="period-btn" data-days="5" aria-pressed="true">5 days</button>
+          <button type="button" class="period-btn" data-days="10" aria-pressed="false">10 days</button>
+          <button type="button" class="period-btn" data-days="30" aria-pressed="false">30 days</button>
+          <button type="button" class="period-btn" data-days="365" aria-pressed="false">1 year</button>
+        </div>
+      </div>
+
+      <button type="button" class="scan-btn" id="scanBtn">Run scan</button>
+
+      <div class="drawer-foot">
+        Each scan runs several topic searches against Google News, one after another — free, no account, no API key — so it takes a few seconds longer but finds a lot more. New finds get added to the log below.
+        <br>
+        <button type="button" class="clear-link" id="clearBtn">Clear the log</button>
+      </div>
+    </aside>
+
+    <main>
+      <div class="log-header">
+        <h2>Log</h2>
+        <div class="tally" id="tally">0 incidents logged</div>
+      </div>
+
+      <div class="status-line" id="statusLine"></div>
+
+      <div id="entriesContainer">
+        <div class="empty-state" id="emptyState">
+          <p class="big">No incidents logged yet.</p>
+          <p>Pick a state and a time window on the left, then run a scan. Reports of drivers striking cyclists land here, newest first, and stay logged so repeat scans build up a running record.</p>
+        </div>
+      </div>
+
+      <div class="entries" id="entries"></div>
+    </main>
+
+  </div>
+
+  <footer class="note">
+    Results come straight from Google News search, filtered to your state and time window — this page doesn't use any paid API and doesn't invent stories. Headlines are matched by keyword, not read for meaning, so occasional off-target results are normal; skim before treating anything as a confirmed case. Google News's free search leans toward recent, prominent coverage rather than acting as a complete historical archive, so even a "1 year" scan will mostly surface currently-findable stories, not every matching crash ever reported — treat the count as "what's findable right now," not a census. Very recent windows (like 1 day) sometimes return little for the same reason. State filtering only works precisely for stories found during a scan run with that state selected — stories found under "All states" are tagged generically and won't reappear if you switch to a specific state later. Your log is saved in this browser once the page is hosted on its own; it won't carry over to a different browser or device.
+  </footer>
+
+</div>
+
+<script>
+  const STATES = [
+    ["Alabama","AL"],["Alaska","AK"],["Arizona","AZ"],["Arkansas","AR"],["California","CA"],
+    ["Colorado","CO"],["Connecticut","CT"],["Delaware","DE"],["District of Columbia","DC"],
+    ["Florida","FL"],["Georgia","GA"],["Hawaii","HI"],["Idaho","ID"],["Illinois","IL"],
+    ["Indiana","IN"],["Iowa","IA"],["Kansas","KS"],["Kentucky","KY"],["Louisiana","LA"],
+    ["Maine","ME"],["Maryland","MD"],["Massachusetts","MA"],["Michigan","MI"],["Minnesota","MN"],
+    ["Mississippi","MS"],["Missouri","MO"],["Montana","MT"],["Nebraska","NE"],["Nevada","NV"],
+    ["New Hampshire","NH"],["New Jersey","NJ"],["New Mexico","NM"],["New York","NY"],
+    ["North Carolina","NC"],["North Dakota","ND"],["Ohio","OH"],["Oklahoma","OK"],["Oregon","OR"],
+    ["Pennsylvania","PA"],["Rhode Island","RI"],["South Carolina","SC"],["South Dakota","SD"],
+    ["Tennessee","TN"],["Texas","TX"],["Utah","UT"],["Vermont","VT"],["Virginia","VA"],
+    ["Washington","WA"],["West Virginia","WV"],["Wisconsin","WI"],["Wyoming","WY"]
+  ];
+
+  // ---- CONFIG ----
+  // Free Cloudflare Worker that relays Google News RSS requests so the browser
+  // is allowed to read them (Google doesn't allow direct cross-site fetches).
+  // No API key, no billing, no secrets — replace with your own Worker's URL
+  // once you've deployed it.
+  const WORKER_URL = "https://overreach-proxy.kerrycfix.workers.dev";
+
+  const stateSelect = document.getElementById('stateSelect');
+  STATES.forEach(([name, abbr]) => {
+    const opt = document.createElement('option');
+    opt.value = abbr;
+    opt.dataset.name = name;
+    opt.textContent = name;
+    stateSelect.appendChild(opt);
+  });
+
+  let selectedDays = 5;
+  const periodButtons = Array.from(document.querySelectorAll('.period-btn'));
+  periodButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      periodButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      selectedDays = Number(btn.dataset.days);
+      renderEntries();
+    });
+  });
+
+  stateSelect.addEventListener('change', renderEntries);
+
+  function formatPeriod(days){
+    if (days === 365) return '1 year';
+    if (days === 1) return '1 day';
+    return `${days} days`;
+  }
+
+  const scanBtn = document.getElementById('scanBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const statusLine = document.getElementById('statusLine');
+  const entriesEl = document.getElementById('entries');
+  const emptyState = document.getElementById('emptyState');
+  const tallyEl = document.getElementById('tally');
+  const lastScanMeta = document.getElementById('lastScanMeta');
+
+  // log persists across visits via localStorage, keyed by URL to avoid duplicates.
+  // Falls back to in-memory-only if storage isn't available (e.g. inside the
+  // Claude.ai artifact preview, where browser storage APIs are disabled).
+  const STORAGE_KEY = 'shoulder-check-log-v1';
+  const log = new Map();
+  let storageAvailable = false;
+
+  function loadLog(){
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        JSON.parse(raw).forEach(item => { if (item && item.url) log.set(item.url, item); });
+      }
+      storageAvailable = true;
+    } catch (e) {
+      storageAvailable = false;
+    }
+  }
+
+  function saveLog(){
+    if (!storageAvailable) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(log.values())));
+    } catch (e) {
+      // quota or access error — fail silently, log still works in-memory
+    }
+  }
+
+  function isWithinWindow(dateStr, days){
+    if (!dateStr) return true;
+    const itemDate = new Date(`${dateStr}T00:00:00`);
+    if (isNaN(itemDate)) return true;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    cutoff.setHours(0, 0, 0, 0);
+    return itemDate >= cutoff;
+  }
+
+  function matchesFilters(item, stateAbbr, days){
+    const stateOk = stateAbbr === 'ALL' || item.state === stateAbbr;
+    return stateOk && isWithinWindow(item.date, days);
+  }
+
+  function renderEntries(){
+    const stateAbbr = stateSelect.value;
+    const days = selectedDays;
+    const all = Array.from(log.values());
+    const items = all
+      .filter(item => matchesFilters(item, stateAbbr, days))
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    entriesEl.innerHTML = '';
+
+    if (all.length === 0) {
+      emptyState.style.display = 'block';
+      emptyState.querySelector('.big').textContent = 'No incidents logged yet.';
+      emptyState.querySelector('p:last-child').textContent = "Pick a state and a time window on the left, then run a scan. Reports of drivers striking cyclists land here, newest first, and stay logged so repeat scans build up a running record.";
+    } else if (items.length === 0) {
+      emptyState.style.display = 'block';
+      emptyState.querySelector('.big').textContent = 'Nothing saved matches this filter.';
+      emptyState.querySelector('p:last-child').textContent = "You've logged incidents, but none fit this state/time window. Try a wider period, switch to All states, or run a new scan with these filters.";
+    } else {
+      emptyState.style.display = 'none';
+    }
+
+    tallyEl.textContent = items.length === all.length
+      ? `${all.length} incident${all.length === 1 ? '' : 's'} logged`
+      : `${items.length} of ${all.length} shown`;
+
+    items.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'entry';
+
+      const top = document.createElement('div');
+      top.className = 'entry-top';
+
+      const dateTag = document.createElement('span');
+      dateTag.className = 'entry-date';
+      dateTag.textContent = item.date || 'undated';
+
+      const stateTag = document.createElement('span');
+      stateTag.className = 'entry-state';
+      stateTag.textContent = item.state || 'US';
+
+      top.appendChild(dateTag);
+      top.appendChild(stateTag);
+
+      const title = document.createElement('h3');
+      title.className = 'entry-title';
+      const link = document.createElement('a');
+      link.href = item.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = item.title;
+      title.appendChild(link);
+
+      const source = document.createElement('div');
+      source.className = 'entry-source';
+      source.textContent = item.source || '';
+
+      card.appendChild(top);
+      card.appendChild(title);
+      card.appendChild(source);
+      entriesEl.appendChild(card);
+    });
+  }
+
+  function periodToWhenToken(days){
+    return days === 365 ? '1y' : `${days}d`;
+  }
+
+  const TOPIC_QUERIES = [
+    '(cyclist OR bicyclist OR "bike rider") (killed OR dead OR fatally OR fatal)',
+    '(cyclist OR bicyclist) ("hit and run" OR "hit-and-run" OR "fled the scene")',
+    '(cyclist OR bicyclist) (struck OR hit) (car OR vehicle OR truck OR SUV OR driver)',
+    '(cyclist OR bicyclist) (critical OR "life-threatening" OR "seriously injured" OR "serious injuries" OR hospitalized)',
+    '"bike crash" (killed OR injured OR critical OR dead)',
+    '(cyclist OR bicyclist) (crash OR collision) (charged OR arrested OR investigation)'
+  ];
+
+  function buildTopicUrl(topic, stateAbbr, stateName, days){
+    let q = topic;
+    if (stateName) q += ` "${stateName}"`;
+    q += ` when:${periodToWhenToken(days)}`;
+    const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+    return `${WORKER_URL}?url=${encodeURIComponent(rss)}`;
+  }
+
+  function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+  async function fetchWithRetry(url, attempts = 3){
+    let lastError;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) return await res.text();
+        lastError = new Error(`status ${res.status}`);
+      } catch (err) {
+        lastError = err;
+      }
+      if (i < attempts - 1) await wait(600 * (i + 1));
+    }
+    throw lastError;
+  }
+
+  function parseRssItems(xmlText, stateAbbr){
+    if (/systems have detected unusual traffic|detected unusual traffic from your computer/i.test(xmlText)) {
+      const err = new Error('Google is temporarily blocking automated requests from this proxy.');
+      err.blocked = true;
+      throw err;
+    }
+
+    const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+    if (doc.querySelector('parsererror')) {
+      throw new Error('Received an unexpected response instead of search results.');
+    }
+
+    return Array.from(doc.querySelectorAll('item')).map(item => {
+      const rawTitle = item.querySelector('title')?.textContent?.trim() || '';
+      const link = item.querySelector('link')?.textContent?.trim() || '';
+      const pubDate = item.querySelector('pubDate')?.textContent?.trim() || '';
+      const sourceTag = item.querySelector('source')?.textContent?.trim();
+
+      let title = rawTitle;
+      let source = sourceTag || '';
+      if (!source) {
+        const dashIdx = rawTitle.lastIndexOf(' - ');
+        if (dashIdx > -1) {
+          title = rawTitle.slice(0, dashIdx);
+          source = rawTitle.slice(dashIdx + 3);
+        }
+      } else if (rawTitle.endsWith(` - ${source}`)) {
+        title = rawTitle.slice(0, rawTitle.length - source.length - 3);
+      }
+
+      let date = '';
+      const parsed = pubDate ? new Date(pubDate) : null;
+      if (parsed && !isNaN(parsed)) date = parsed.toISOString().slice(0, 10);
+
+      return { title, source, date, url: link, state: stateAbbr || 'US' };
+    }).filter(item => item.title && item.url);
+  }
+
+  const NON_US_MARKERS = [
+    'bangladesh','india','pakistan','china','nigeria','kenya','philippines','indonesia',
+    'united kingdom',' uk ',' u.k.','england','scotland','wales','ireland','australia',
+    'canada','mexico','brazil','france','germany','italy','spain','russia','ukraine',
+    'japan','south korea','vietnam','thailand','malaysia','singapore','egypt','south africa',
+    'sangbad','xinhua',' afp ',' pti ',' ani ','times of india','dawn.com','the hindu'
+  ];
+
+  function looksNonUS(item){
+    const haystack = ` ${item.title.toLowerCase()} ${(item.source || '').toLowerCase()} `;
+    return NON_US_MARKERS.some(marker => haystack.includes(marker));
+  }
+
+  async function runScan(){
+    const stateAbbr = stateSelect.value;
+    const stateName = stateSelect.options[stateSelect.selectedIndex]?.dataset.name || '';
+    const days = selectedDays;
+
+    if (!WORKER_URL || WORKER_URL === 'PASTE_YOUR_WORKER_URL_HERE') {
+      statusLine.classList.add('error');
+      statusLine.textContent = "No Worker URL is set yet — edit WORKER_URL near the top of the script first.";
+      return;
+    }
+
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'Scanning…';
+    statusLine.classList.remove('error');
+    statusLine.textContent = `Searching Google News from the last ${formatPeriod(days)}${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}…`;
+
+    try {
+      const shuffledTopics = [...TOPIC_QUERIES].sort(() => Math.random() - 0.5);
+      const urls = shuffledTopics.map(topic => buildTopicUrl(topic, stateAbbr === 'ALL' ? '' : stateAbbr, stateAbbr === 'ALL' ? '' : stateName, days));
+      const merged = new Map();
+      let succeededCount = 0;
+      let blockedCount = 0;
+      const PER_TOPIC_CAP = 8;
+
+      for (let i = 0; i < urls.length; i++) {
+        statusLine.textContent = `Searching topic ${i + 1} of ${urls.length}${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}…`;
+        try {
+          const xmlText = await fetchWithRetry(urls[i]);
+          const topicItems = parseRssItems(xmlText, stateAbbr === 'ALL' ? 'US' : stateAbbr).filter(item => !looksNonUS(item));
+          succeededCount++;
+          topicItems.slice(0, PER_TOPIC_CAP).forEach(item => {
+            if (!merged.has(item.url)) merged.set(item.url, item);
+          });
+        } catch (e) {
+          if (e.blocked) blockedCount++;
+        }
+        if (i < urls.length - 1) await wait(900);
+      }
+
+      if (succeededCount === 0) {
+        if (blockedCount > 0) {
+          throw new Error("Google is temporarily blocking this page's proxy after heavy use — this usually clears up within an hour or so. Try again later.");
+        }
+        throw new Error('All searches failed — Google News may be temporarily rate-limiting. Try again in a moment.');
+      }
+
+      const items = Array.from(merged.values()).slice(0, 60);
+
+      let added = 0;
+      items.forEach(item => {
+        if (!log.has(item.url)) added++;
+        log.set(item.url, item);
+      });
+
+      renderEntries();
+      saveLog();
+
+      const now = new Date();
+      lastScanMeta.textContent = `last scan: ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      statusLine.textContent = items.length === 0
+        ? `No qualifying stories turned up for this window${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}. Try a wider time period.`
+        : `Scan complete — ${items.length} found, ${added} new.${succeededCount < urls.length ? ` (${urls.length - succeededCount} of ${urls.length} topic searches were rate-limited — try again for more.)` : ''}`;
+
+    } catch (err) {
+      statusLine.classList.add('error');
+      statusLine.textContent = `Scan failed: ${err.message}. Check your connection and try again.`;
+    } finally {
+      scanBtn.disabled = false;
+      scanBtn.textContent = 'Run scan';
+    }
+  }
+
+  scanBtn.addEventListener('click', runScan);
+
+  clearBtn.addEventListener('click', () => {
+    log.clear();
+    renderEntries();
+    saveLog();
+    statusLine.textContent = 'Log cleared.';
+    statusLine.classList.remove('error');
+  });
+
+  loadLog();
+  renderEntries();
+  if (log.size) {
+    statusLine.textContent = `Loaded ${log.size} saved ${log.size === 1 ? 'incident' : 'incidents'} from your last visit.`;
+  } else if (!storageAvailable) {
+    statusLine.textContent = "Heads up: this preview doesn't support saving between visits — once you host the page yourself, your log will persist.";
+  }
+</script>
+</body>
+</html>
