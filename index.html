@@ -637,12 +637,32 @@
     'bike crash critical condition'
   ];
 
-  function looksBikeRelevant(item){
-    return /\b(cyclist|cyclists|bicyclist|bicyclists|bike|biker|bikers|bicycle|bicycling|cycling|e-bike|ebike)\b/i.test(item.title);
+  const RACE_EXCLUSIONS = ' -Vuelta -Giro -"Tour de France" -"Grand Prix" -stage -podium -peloton -criterium -"time trial" -UCI -"World Tour" -breakaway -sprint';
+
+  function looksLikeCarCyclistIncident(item){
+    const t = item.title.toLowerCase();
+    const hasBikeWord = /\b(cyclist|cyclists|bicyclist|bicyclists|bike|biker|bikers|bicycle|bicycling|e-bike|ebike)\b/.test(t);
+    if (!hasBikeWord) return false;
+
+    const raceIndicators = /\b(vuelta|tour de|giro d|grand prix|podium|peloton|breakaway|general classification|\bgc\b|criterium|time trial|uci|world tour|kermesse)\b/;
+    if (raceIndicators.test(t)) return false;
+
+    const hitAndRun = /(hit-and-run|hit and run|fled the scene|fleeing the scene|flee the scene|fled scene)/;
+    if (hitAndRun.test(t)) return true;
+
+    const vehicleWords = /\b(car|truck|suv|driver|vehicle|motorist|van|semi|pickup)\b/;
+    const impactWords = /\b(struck|strikes?|striking|hit|hits|hitting|ran over|runs over|running over|collid\w*|crash\w*|plow\w*|slam\w*)\b/;
+    const deathOrInjury = /\b(kill\w*|dead|fatal\w*|injur\w*|hospital\w*|critical|life-threatening)\b/;
+    const legalConsequence = /\b(charge\w*|arrest\w*|investigat\w*)\b/;
+
+    if (vehicleWords.test(t) && (impactWords.test(t) || deathOrInjury.test(t))) return true;
+    if (impactWords.test(t) && (deathOrInjury.test(t) || legalConsequence.test(t))) return true;
+
+    return false;
   }
 
   function buildTopicUrl(topic, stateAbbr, stateName, days){
-    let q = topic;
+    let q = topic + RACE_EXCLUSIONS;
     if (stateName) q += ` "${stateName}"`;
     const rss = `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&setmkt=en-US&qft=sortbydate%3d%221%22`;
     return `${WORKER_URL}?url=${encodeURIComponent(rss)}`;
@@ -752,7 +772,7 @@
         statusLine.textContent = `Searching topic ${i + 1} of ${urls.length}${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}…`;
         try {
           const xmlText = await fetchWithRetry(urls[i]);
-          const topicItems = parseRssItems(xmlText, stateAbbr === 'ALL' ? 'US' : stateAbbr).filter(item => !looksNonUS(item) && looksBikeRelevant(item));
+          const topicItems = parseRssItems(xmlText, stateAbbr === 'ALL' ? 'US' : stateAbbr).filter(item => !looksNonUS(item) && looksLikeCarCyclistIncident(item));
           succeededCount++;
           topicItems.slice(0, PER_TOPIC_CAP).forEach(item => {
             if (!merged.has(item.url)) merged.set(item.url, item);
