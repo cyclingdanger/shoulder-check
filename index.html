@@ -452,7 +452,7 @@
   </div>
 
   <footer class="note">
-    Results come straight from Bing News search, filtered to your state and time window — this page doesn't use any paid API and doesn't invent stories. Headlines are matched by keyword, not read for meaning, so occasional off-target results are normal; skim before treating anything as a confirmed case. Bing News's free search leans toward recent, prominent coverage rather than acting as a complete historical archive, so even a "1 year" scan will mostly surface currently-findable stories, not every matching crash ever reported — treat the count as "what's findable right now," not a census. Very recent windows (like 1 day) sometimes return little for the same reason. State filtering only works precisely for stories found during a scan run with that state selected — stories found under "All states" are tagged generically and won't reappear if you switch to a specific state later. Your log is saved in this browser once the page is hosted on its own; it won't carry over to a different browser or device.
+    Results come straight from Bing News search, filtered to your state and time window — this page doesn't use any paid API and doesn't invent stories. Headlines are matched by keyword, not read for meaning, so occasional off-target results are normal; skim before treating anything as a confirmed case. Bing News's free search leans toward recent, prominent coverage rather than acting as a complete historical archive, so even a "1 year" scan will mostly surface currently-findable stories, not every matching crash ever reported — treat the count as "what's findable right now," not a census. Very recent windows (like 1 day) sometimes return little for the same reason. State tags are read from each headline's text, so a story only shows up under a specific state if that state's name appears in the headline itself — stories that don't name a state stay tagged "US" even if they're about a specific place. Your log is saved in this browser once the page is hosted on its own; it won't carry over to a different browser or device.
   </footer>
 
 </div>
@@ -627,13 +627,19 @@
   }
 
   const TOPIC_QUERIES = [
-    '(cyclist OR bicyclist OR "bike rider") (killed OR dead OR fatally OR fatal)',
-    '(cyclist OR bicyclist) ("hit and run" OR "hit-and-run" OR "fled the scene")',
-    '(cyclist OR bicyclist) (struck OR hit) (car OR vehicle OR truck OR SUV OR driver)',
-    '(cyclist OR bicyclist) (critical OR "life-threatening" OR "seriously injured" OR "serious injuries" OR hospitalized)',
-    '"bike crash" (killed OR injured OR critical OR dead)',
-    '(cyclist OR bicyclist) (crash OR collision) (charged OR arrested OR investigation)'
+    'cyclist killed',
+    'bicyclist killed',
+    'cyclist hit-and-run',
+    'bicyclist hit and run',
+    'cyclist struck by car',
+    'bicyclist struck by vehicle',
+    'cyclist seriously injured crash',
+    'bike crash critical condition'
   ];
+
+  function looksBikeRelevant(item){
+    return /\b(cyclist|cyclists|bicyclist|bicyclists|bike|biker|bikers|bicycle|bicycling|cycling|e-bike|ebike)\b/i.test(item.title);
+  }
 
   function buildTopicUrl(topic, stateAbbr, stateName, days){
     let q = topic;
@@ -657,6 +663,14 @@
       if (i < attempts - 1) await wait(600 * (i + 1));
     }
     throw lastError;
+  }
+
+  function detectStateFromTitle(title, fallbackAbbr){
+    for (const [name, abbr] of STATES) {
+      const re = new RegExp(`\\b${name}\\b`, 'i');
+      if (re.test(title)) return abbr;
+    }
+    return fallbackAbbr;
   }
 
   function parseRssItems(xmlText, stateAbbr){
@@ -693,7 +707,7 @@
       const parsed = pubDate ? new Date(pubDate) : null;
       if (parsed && !isNaN(parsed)) date = parsed.toISOString().slice(0, 10);
 
-      return { title, source, date, url: link, state: stateAbbr || 'US' };
+      return { title, source, date, url: link, state: detectStateFromTitle(title, stateAbbr || 'US') };
     }).filter(item => item.title && item.url);
   }
 
@@ -738,7 +752,7 @@
         statusLine.textContent = `Searching topic ${i + 1} of ${urls.length}${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}…`;
         try {
           const xmlText = await fetchWithRetry(urls[i]);
-          const topicItems = parseRssItems(xmlText, stateAbbr === 'ALL' ? 'US' : stateAbbr).filter(item => !looksNonUS(item));
+          const topicItems = parseRssItems(xmlText, stateAbbr === 'ALL' ? 'US' : stateAbbr).filter(item => !looksNonUS(item) && looksBikeRelevant(item));
           succeededCount++;
           topicItems.slice(0, PER_TOPIC_CAP).forEach(item => {
             if (!merged.has(item.url)) merged.set(item.url, item);
