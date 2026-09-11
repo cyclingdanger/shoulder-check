@@ -425,7 +425,7 @@
       <button type="button" class="scan-btn" id="scanBtn">Run scan</button>
 
       <div class="drawer-foot">
-        Each scan runs several topic searches against Google News, one after another — free, no account, no API key — so it takes a few seconds longer but finds a lot more. New finds get added to the log below.
+        Each scan runs several topic searches against Bing News, one after another — free, no account, no API key — so it takes a few seconds longer but finds a lot more. New finds get added to the log below.
         <br>
         <button type="button" class="clear-link" id="clearBtn">Clear the log</button>
       </div>
@@ -452,7 +452,7 @@
   </div>
 
   <footer class="note">
-    Results come straight from Google News search, filtered to your state and time window — this page doesn't use any paid API and doesn't invent stories. Headlines are matched by keyword, not read for meaning, so occasional off-target results are normal; skim before treating anything as a confirmed case. Google News's free search leans toward recent, prominent coverage rather than acting as a complete historical archive, so even a "1 year" scan will mostly surface currently-findable stories, not every matching crash ever reported — treat the count as "what's findable right now," not a census. Very recent windows (like 1 day) sometimes return little for the same reason. State filtering only works precisely for stories found during a scan run with that state selected — stories found under "All states" are tagged generically and won't reappear if you switch to a specific state later. Your log is saved in this browser once the page is hosted on its own; it won't carry over to a different browser or device.
+    Results come straight from Bing News search, filtered to your state and time window — this page doesn't use any paid API and doesn't invent stories. Headlines are matched by keyword, not read for meaning, so occasional off-target results are normal; skim before treating anything as a confirmed case. Bing News's free search leans toward recent, prominent coverage rather than acting as a complete historical archive, so even a "1 year" scan will mostly surface currently-findable stories, not every matching crash ever reported — treat the count as "what's findable right now," not a census. Very recent windows (like 1 day) sometimes return little for the same reason. State filtering only works precisely for stories found during a scan run with that state selected — stories found under "All states" are tagged generically and won't reappear if you switch to a specific state later. Your log is saved in this browser once the page is hosted on its own; it won't carry over to a different browser or device.
   </footer>
 
 </div>
@@ -473,8 +473,8 @@
   ];
 
   // ---- CONFIG ----
-  // Free Cloudflare Worker that relays Google News RSS requests so the browser
-  // is allowed to read them (Google doesn't allow direct cross-site fetches).
+  // Free Cloudflare Worker that relays Bing News RSS requests so the browser
+  // is allowed to read them (Bing doesn't allow direct cross-site fetches).
   // No API key, no billing, no secrets — replace with your own Worker's URL
   // once you've deployed it.
   const WORKER_URL = "https://overreach-proxy.kerrycfix.workers.dev";
@@ -638,8 +638,7 @@
   function buildTopicUrl(topic, stateAbbr, stateName, days){
     let q = topic;
     if (stateName) q += ` "${stateName}"`;
-    q += ` when:${periodToWhenToken(days)}`;
-    const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
+    const rss = `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&setmkt=en-US&qft=sortbydate%3d%221%22`;
     return `${WORKER_URL}?url=${encodeURIComponent(rss)}`;
   }
 
@@ -661,8 +660,8 @@
   }
 
   function parseRssItems(xmlText, stateAbbr){
-    if (/systems have detected unusual traffic|detected unusual traffic from your computer/i.test(xmlText)) {
-      const err = new Error('Google is temporarily blocking automated requests from this proxy.');
+    if (/systems have detected unusual traffic|detected unusual traffic from your computer|are you a robot|verify you are human|enable javascript and cookies/i.test(xmlText)) {
+      const err = new Error('Bing is temporarily blocking automated requests from this proxy.');
       err.blocked = true;
       throw err;
     }
@@ -725,7 +724,7 @@
     scanBtn.disabled = true;
     scanBtn.textContent = 'Scanning…';
     statusLine.classList.remove('error');
-    statusLine.textContent = `Searching Google News from the last ${formatPeriod(days)}${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}…`;
+    statusLine.textContent = `Searching Bing News from the last ${formatPeriod(days)}${stateAbbr === 'ALL' ? '' : ` in ${stateName}`}…`;
 
     try {
       const shuffledTopics = [...TOPIC_QUERIES].sort(() => Math.random() - 0.5);
@@ -752,9 +751,9 @@
 
       if (succeededCount === 0) {
         if (blockedCount > 0) {
-          throw new Error("Google is temporarily blocking this page's proxy after heavy use — this usually clears up within an hour or so. Try again later.");
+          throw new Error("Bing is temporarily blocking this page's proxy after heavy use — this usually clears up within an hour or so. Try again later.");
         }
-        throw new Error('All searches failed — Google News may be temporarily rate-limiting. Try again in a moment.');
+        throw new Error('All searches failed — Bing News may be temporarily rate-limiting. Try again in a moment.');
       }
 
       const items = Array.from(merged.values()).slice(0, 60);
